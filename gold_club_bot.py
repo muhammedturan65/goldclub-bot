@@ -8,7 +8,7 @@ import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+# webdriver-manager kütüphanesi artık kullanılmadığı için import satırı kaldırıldı.
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
@@ -80,21 +80,25 @@ class GoldClubBot:
             return None
 
     def _setup_driver(self):
-        """Selenium WebDriver'ı Render.com sunucu ortamı için özel ayarlar ile başlatır."""
-        print("-> WebDriver hazırlanıyor (Render.com modu)...")
+        """Selenium WebDriver'ı Render.com'un build script ile kurduğu Chrome'u kullanacak şekilde başlatır."""
+        print("-> WebDriver hazırlanıyor (Render.com Build Script modu)...")
         try:
             options = webdriver.ChromeOptions()
-            # Render'ın Linux konteynerlerinde sorunsuz çalışması için GEREKLİ ayarlar:
             options.add_argument('--headless')
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             options.add_argument('--disable-gpu')
             options.add_argument('--window-size=1920,1080')
-            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_argument('--log-level=3')
 
-            # webdriver-manager, sunucu ortamına uygun sürücüyü otomatik olarak indirip yönetir.
-            service = Service(ChromeDriverManager().install())
+            # --- ANA DEĞİŞİKLİK BURADA ---
+            # webdriver-manager'ı KULLANMIYORUZ.
+            # Service() objesini boş bırakarak Selenium'un sistemde (PATH'te)
+            # bulunan sürücüyü kullanmasını sağlıyoruz. build.sh bunu bizim için ayarlar.
+            service = Service()
             self.driver = webdriver.Chrome(service=service, options=options)
+            # ---------------------------
+
             self.wait = WebDriverWait(self.driver, 20)
             print("-> WebDriver başarıyla başlatıldı.")
         except WebDriverException as e:
