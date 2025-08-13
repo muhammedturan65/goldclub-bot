@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
-# Hata durumunda betiği sonlandır
+# Bu betik, Render.com üzerinde dağıtım (deploy) işlemi sırasında çalıştırılır.
+
+# Herhangi bir komut başarısız olursa betiği hemen sonlandır.
 set -o errexit
 
-# Python kütüphanelerini requirements.txt dosyasından yükle
+# 1. Adım: requirements.txt dosyasında listelenen Python kütüphanelerini kur.
+echo "---> Python kütüphaneleri kuruluyor..."
 pip install -r requirements.txt
 
-# Chromium'u kur (Render'ın önbelleğe alma özelliğini kullanarak)
-STORAGE_DIR=/opt/render/project/.render
-if [[ ! -d $STORAGE_DIR/chrome ]]; then
-  echo "...Chrome indiriliyor"
-  mkdir -p $STORAGE_DIR/chrome
-  cd $STORAGE_DIR/chrome
-  wget -P ./ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-  dpkg -x ./google-chrome-stable_current_amd64.deb .
-  rm ./google-chrome-stable_current_amd64.deb
-  # Betiğin çalıştığı önceki dizine geri dön
-  cd $HOME/project/src
-else
-  echo "...Önbellekten Chrome kullanılıyor"
-fi
+# 2. Adım: Selenium'un ihtiyaç duyduğu sistem bağımlılıklarını kur.
+# Bu komutlar, "cannot find Chrome binary" hatasını çözmek için
+# Chromium tarayıcısını ve ilgili sürücüsünü sunucuya yükler.
+echo "---> Sistem bağımlılıkları (Chromium & ChromeDriver) kuruluyor..."
+apt-get update
+apt-get install -y chromium chromium-driver
+
+echo "---> Kurulum betiği başarıyla tamamlandı."
