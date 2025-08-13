@@ -1,4 +1,4 @@
-# app.py
+# app.py (Hata Düzeltilmiş Son Versiyon)
 
 import os
 import sqlite3
@@ -9,35 +9,30 @@ from flask import Flask, render_template_string, request, jsonify, Response
 from gold_club_bot import GoldClubBot
 
 # --- Ayarlar ve Konfigürasyon ---
-# Render, dosyaları geçici bir dizine koyabilir, bu yüzden dosya yollarını dinamik olarak belirliyoruz.
-# 'data' adında bir klasör oluşturup veritabanını ve playlistleri orada saklamak daha güvenilirdir.
-DATA_DIR = os.path.join(os.getcwd(), 'data')
+project_path = os.getcwd() 
+DATA_DIR = os.path.join(project_path, 'data')
 DATABASE = os.path.join(DATA_DIR, 'goldclub_data.db')
 PLAYLISTS_DIR = os.path.join(DATA_DIR, 'playlists')
-CONFIG_FILE = os.path.join(os.getcwd(), 'config.json') # Yerel geliştirme için
+CONFIG_FILE = os.path.join(project_path, 'config.json') 
 config = {}
 
-# Render'daki ortam değişkenlerini (environment variables) öncelikli olarak kullan
 if 'GOLD_CLUB_EMAIL' in os.environ and 'GOLD_CLUB_PASSWORD' in os.environ:
     print("Ortam değişkenleri (Render) kullanılıyor.")
     config['email'] = os.environ.get('GOLD_CLUB_EMAIL')
     config['password'] = os.environ.get('GOLD_CLUB_PASSWORD')
 else:
-    # Yerel ortamda çalışıyorsa config.json'u kullan
     print("Yerel config.json dosyası kullanılıyor.")
     try:
         with open(CONFIG_FILE, 'r') as f: config = json.load(f)
     except FileNotFoundError:
-        sys.exit(f"HATA: Ne ortam değişkenleri ne de {CONFIG_FILE} dosyası bulundu. Lütfen yapılandırmayı kontrol edin.")
+        sys.exit(f"HATA: Ne ortam değişkenleri ne de {CONFIG_FILE} dosyası bulundu.")
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE); conn.row_factory = sqlite3.Row; return conn
 
 def init_app():
-    # Veri klasörlerini oluştur
     if not os.path.exists(DATA_DIR): os.makedirs(DATA_DIR)
     if not os.path.exists(PLAYLISTS_DIR): os.makedirs(PLAYLISTS_DIR)
-    # Veritabanını oluştur
     if not os.path.exists(DATABASE):
         conn = get_db_connection()
         conn.execute("CREATE TABLE generated_links (id INTEGER PRIMARY KEY, m3u_url TEXT NOT NULL, expiry_date TEXT NOT NULL, channel_count INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")
@@ -48,10 +43,9 @@ def init_app():
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'render-icin-super-gizli-anahtar!'
 
-# --- HTML TEMPLATE'LER (En son tasarımlar) ---
+# --- HTML TEMPLATE'LER ---
 HOME_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="tr"><head><meta charset="UTF-8"><title>Playlist Yönetim Paneli</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>:root { --bg-dark: #101014; --bg-card: rgba(30, 30, 35, 0.5); --border-color: rgba(255, 255, 255, 0.1); --text-primary: #f0f0f0; --text-secondary: #a0a0a0; --accent-grad: linear-gradient(90deg, #8A2387, #E94057, #F27121); --success-color: #1ed760; --error-color: #f44336; }@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }* { box-sizing: border-box; margin: 0; padding: 0; }body { font-family: 'Manrope', sans-serif; background: var(--bg-dark); color: var(--text-primary); }body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 15% 25%, #8a238744, transparent 30%), radial-gradient(circle at 85% 75%, #f2712133, transparent 40%); z-index: -1; } .container { max-width: 900px; margin: 3rem auto; padding: 0 2rem; }.shell { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }h1, h2 { font-weight: 800; }.btn { display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; padding: 0.9rem; background: var(--accent-grad); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; font-weight: 700; margin-top: 1.5rem; }.btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 4px 20px rgba(233, 64, 87, 0.3); }.btn:disabled { background: #333; cursor: not-allowed; opacity: 0.6; }.history-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }.history-table th, .history-table td { padding: 1rem; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; }.btn-details { background: var(--success-color); color: white; padding: 0.4rem 1rem; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: 500; }.notification { padding: 1rem; border-radius: 8px; margin-top: 1.5rem; display: none; text-align: center; font-weight: 500; }.notification.success { background: var(--success-color); color: white; }.notification.error { background: var(--error-color); color: white; }</style></head>
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Playlist Yönetim Paneli</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>:root { --bg-dark: #101014; --bg-card: rgba(30, 30, 35, 0.5); --border-color: rgba(255, 255, 255, 0.1); --text-primary: #f0f0f0; --text-secondary: #a0a0a0; --accent-grad: linear-gradient(90deg, #8A2387, #E94057, #F27121); --success-color: #1ed760; --error-color: #f44336; }@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }* { box-sizing: border-box; margin: 0; padding: 0; }body { font-family: 'Manrope', sans-serif; background: var(--bg-dark); color: var(--text-primary); }body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 15% 25%, #8a238744, transparent 30%), radial-gradient(circle at 85% 75%, #f2712133, transparent 40%); z-index: -1; } .container { max-width: 900px; margin: 3rem auto; padding: 0 2rem; }.shell { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 2rem; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }h1, h2 { font-weight: 800; }.btn { display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; padding: 0.9rem; background: var(--accent-grad); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s; font-weight: 700; margin-top: 1.5rem; }.btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 4px 20px rgba(233, 64, 87, 0.3); }.btn:disabled { background: #333; cursor: not-allowed; opacity: 0.6; }.history-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }.history-table th, .history-table td { padding: 1rem; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; }.btn-details { background: var(--success-color); color: white; padding: 0.4rem 1rem; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: 500; }.notification { padding: 1rem; border-radius: 8px; margin-top: 1.5rem; display: none; text-align: center; font-weight: 500; }.notification.success { background: var(--success-color); color: white; }.notification.error { background: var(--error-color); color: white; }</style></head>
 <body><div class="container"><div class="shell"><h1 style="text-align: center;">Playlist Yönetim Paneli</h1><form id="control-form" method="POST" action="{{ url_for('handle_start_process') }}"><label for="target_group" style="color:var(--text-secondary); margin-top:1.5rem;">Filtrelenecek Kanal Grubu</label><input type="text" id="target_group" name="target_group" value="TURKISH" style="background-color: rgba(0,0,0,0.2);"><button type="submit" id="start-btn" class="btn"><i data-feather="play-circle"></i><span>Link Üret ve Analiz Et</span></button></form><div id="notification-area">{% if message %}<div class="notification {{ 'success' if success else 'error' }}" style="display:flex; align-items:center; justify-content:center; gap: 0.5rem;"><i data-feather="{{ 'check-circle' if success else 'alert-triangle' }}"></i> <span>{{ message }}</span></div>{% endif %}</div><h2 style="margin-top:2.5rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">Geçmiş İşlemler</h2><div style="max-height: 550px; overflow-y: auto;"><table class="history-table"><thead><tr><th>Üretim Zamanı</th><th>Son Kullanma</th><th>Kanal Sayısı</th><th>İşlem</th></tr></thead><tbody>{% for item in history %}<tr><td>{{ item.created_at.split('.')[0] }}</td><td>{{ item.expiry_date }}</td><td>{{ item.channel_count }}</td><td><a href="{{ url_for('playlist_details', link_id=item.id) }}" class="btn-details">Detaylar</a></td></tr>{% endfor %}</tbody></table></div></div></div>
 <script>feather.replace();document.getElementById('control-form').addEventListener('submit', () => { const btn = document.getElementById('start-btn'); btn.disabled = true; btn.innerHTML = '<i data-feather="loader" class="spinner"></i><span>İşlem Yürütülüyor... Bu işlem 1-2 dakika sürebilir.</span>'; feather.replace(); });</script></body></html>"""
 PLAYLIST_DETAILS_HTML = """
